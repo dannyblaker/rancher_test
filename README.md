@@ -1,6 +1,6 @@
 **Task**
 
-Can you make the modifications required to this repository to deploy the following apps (mapped to the URL provided) to Rancher:
+Can you make the modifications required to this repository to deploy the following apps (mapped to the URL suffixes provided below) to Rancher:
 
 APP: Directus (<https://docs.directus.io/self-hosted/docker-guide.html>)
 URL: your.domain.com/directus
