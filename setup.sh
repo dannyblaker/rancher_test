@@ -61,7 +61,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd)"
 CERT_DIR="$SCRIPT_DIR/cert"
 CERT_NAME="my-cert"
 DAYS="90"
-PASSPHRASE=""
+PASSPHRASE="" # <<<<<< Make sure to add your passphrase here and then on prompt enter that password
 CRON_RENEW_SCHEDULE="0 0 * * *"
 
 # Remove existing certificate directory if exists and create a new one
