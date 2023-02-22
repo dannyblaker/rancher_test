@@ -55,53 +55,6 @@ sudo usermod -aG docker $USER
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" &>/dev/null && pwd)"
 
-# create cert required for Rancher
-
-# Set variables
-CERT_DIR="$SCRIPT_DIR/cert"
-CERT_NAME="my-cert"
-DAYS="90"
-PASSPHRASE=""
-CRON_RENEW_SCHEDULE="0 0 * * *"
-
-# Remove existing certificate directory if exists and create a new one
-sudo rm -rf $CERT_DIR
-mkdir $CERT_DIR
-
-# Generate private key
-openssl genrsa -aes256 -passout pass:$PASSPHRASE -out $CERT_DIR/$CERT_NAME.key 2048
-
-# Generate CSR
-openssl req -new -key $CERT_DIR/$CERT_NAME.key -out $CERT_DIR/$CERT_NAME.csr -subj "/C=AU/ST=SA/L=Adelaide/O=Sintelix/CN=$DOMAIN"
-
-# Generate self-signed certificate
-openssl x509 -req -days $DAYS -in $CERT_DIR/$CERT_NAME.csr -signkey $CERT_DIR/$CERT_NAME.key -out $CERT_DIR/$CERT_NAME.crt -passin pass:$PASSPHRASE
-
-# Remove passphrase from private key
-openssl rsa -in $CERT_DIR/$CERT_NAME.key -out $CERT_DIR/$CERT_NAME.key -passin pass:$PASSPHRASE
-
-# Concatenate certificate and CA certificate into full chain
-cat $CERT_DIR/$CERT_NAME.crt $CERT_DIR/$CERT_NAME.crt >$CERT_DIR/FULL_CHAIN.pem
-
-# Extract private key
-openssl rsa -in $CERT_DIR/$CERT_NAME.key -out $CERT_DIR/PRIVATE_KEY.pem -passin pass:$PASSPHRASE
-
-# Extract CA certificates
-openssl x509 -in $CERT_DIR/$CERT_NAME.crt -text | grep "Issuer" | awk '{print $3}' | sort -u >$CERT_DIR/CA_CERTS.pem
-
-# Set permissions on private key
-chmod 400 $CERT_DIR/PRIVATE_KEY.pem
-
-# Add a cron job to renew the certificate
-echo "# Renew the SSL certificate one week before it expires" >$CERT_DIR/cronjob
-echo "$CRON_RENEW_SCHEDULE certbot renew --pre-hook 'service nginx stop' --post-hook 'service nginx start' --deploy-hook 'cat $CERT_DIR/privkey.pem $CERT_DIR/fullchain.pem > /etc/letsencrypt/live/$DOMAIN/privkey.pem; service nginx restart'" >>$CERT_DIR/cronjob
-echo "" >>$CERT_DIR/cronjob
-
-# Add cron job to the crontab
-crontab $CERT_DIR/cronjob
-
-echo "Certificate generated and cron job set up for automatic renewal."
-
 #----------------------------------------------------------
 #DEPLOYING RANCHER
 # Set the path to the Docker Compose file for Rancher
