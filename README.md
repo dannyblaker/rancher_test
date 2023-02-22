@@ -22,7 +22,7 @@ To complete this task you will need:
  - VScode, setup for remote development (guide here <https://code.visualstudio.com/docs/remote/ssh#_getting-started>)
 
 
-**Follow setup steps in this doc**
+**Follow Task setup steps in this doc**
 
 
 <https://docs.google.com/document/d/1RVttdiJbjKUF5VxSbwBlsIRe1ZIR2FhNpTavMlZqyj8/edit?usp=sharing>
