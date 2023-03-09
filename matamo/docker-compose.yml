@@ -27,6 +27,7 @@ services:
     env_file:
       - ./db.env
 
+  #NOTE: kindly remove the nginx setup below and use Rancher's built-in load balancer instead. Thanks!  
   web:
     image: nginx:alpine
     restart: always

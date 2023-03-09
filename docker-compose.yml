@@ -1,0 +1,96 @@
+version: '3'
+
+services:
+
+  traefik:
+    image: traefik:v2.6
+    command:
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443"
+      - "--certificatesresolvers.myresolver.acme.tlschallenge=true"
+      - "--certificatesresolvers.myresolver.acme.email=<your-email-address>"
+      - "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json"
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock"
+      - "./letsencrypt:/letsencrypt"
+    networks:
+      - web
+
+  directus:
+    image: directus/directus:latest
+    container_name: directus
+    volumes:
+      - ./uploads:/directus/uploads
+      - ./extensions:/directus/extensions
+    networks:
+      - web
+    environment:
+      KEY: '${KEY}'
+      SECRET: '${SECRET}'
+
+      DB_CLIENT: 'pg'
+      DB_HOST: 'database'
+      DB_PORT: '5432'
+      DB_DATABASE: 'directus'
+      DB_USER: 'directus'
+      DB_PASSWORD: '${DIRECTUS_PG_PASS}'
+
+      CACHE_ENABLED: 'true'
+      CACHE_STORE: 'redis'
+      CACHE_REDIS: 'redis://cache:6379'
+
+      ADMIN_EMAIL: '${DIRECTUS_ADMIN_EMAIL}'
+      ADMIN_PASSWORD: '${DIRECTUS_ADMIN_PASS}'
+
+      # (docs: https://docs.directus.io/self-hosted/config-options#general)
+      PUBLIC_URL: 'https://mtools.sintelix.com/directus'
+    deploy:
+      replicas: 2
+      labels:
+        - "traefik.enable=true"
+        - "traefik.http.routers.directus.rule=Host(`mtools.sintelix.com`) && PathPrefix(`/directus`)"
+        - "traefik.http.routers.directus.tls=true"
+        - "traefik.http.routers.directus.tls.certresolver=myresolver"
+        - "traefik.http.services.directus.loadbalancer.server.port=8055"
+
+  myapp:
+    image: myapp-image
+    container_name: myapp
+    networks:
+      - web
+    environment:
+      MYAPP_PORT: '8080'
+    deploy:
+      replicas: 2
+      labels:
+        - "traefik.enable=true"
+        - "traefik.http.routers.myapp.rule=Host(`mtools.sintelix.com`) && PathPrefix(`/myapp`)"
+        - "traefik.http.routers.myapp.tls=true"
+        - "traefik.http.routers.myapp.tls.certresolver=myresolver"
+        - "traefik.http.services.myapp.loadbalancer.server.port=8080"
+
+  database:
+    image: postgis/postgis:13-master
+    container_name: database
+    volumes:
+      - ./data/database:/var/lib/postgresql/data
+    networks:
+      - web
+    environment:
+      POSTGRES_USER: 'directus'
+      POSTGRES_PASSWORD: 'directus'
+      POSTGRES_DB: 'directus'
+
+  cache:
+    image: redis:6
+    container_name: cache
+    networks:
+      - web
+
+networks:
+  web:

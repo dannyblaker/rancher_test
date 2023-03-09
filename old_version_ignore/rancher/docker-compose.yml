@@ -1,0 +1,17 @@
+# https://ranchermanager.docs.rancher.com/v2.6/pages-for-subheaders/rancher-on-a-single-node-with-docker
+version: '3.8'
+
+services:
+  rancher:
+    image: rancher/rancher:latest
+    container_name: rancher
+    restart: unless-stopped
+    privileged: true
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./cert/<FULL_CHAIN.pem>:/etc/rancher/ssl/cert.pem
+      - ./cert/<PRIVATE_KEY.pem>:/etc/rancher/ssl/key.pem
+      - ./cert/<CA_CERTS.pem>:/etc/rancher/ssl/cacerts.pem
+
